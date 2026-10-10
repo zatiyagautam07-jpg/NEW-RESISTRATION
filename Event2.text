@@ -1,0 +1,785 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>College Event Registration System</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif}
+body{background:#f1f5f9;color:#1e293b;min-height:100vh}
+.navbar{background:#312e81;color:white;padding:15px 4%;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.logo{font-size:21px;font-weight:bold}
+.nav-links{display:flex;list-style:none;gap:5px;flex-wrap:wrap}
+.nav-links button{background:transparent;color:white;border:0;padding:11px;cursor:pointer;border-radius:6px}
+.nav-links button:hover,.nav-links button.active{background:#4f46e5}
+.menu-toggle{display:none;background:transparent;color:white;border:0;font-size:26px}
+main{max-width:1150px;margin:28px auto;padding:0 16px}
+.page{display:none}.page.active{display:block}
+.card{background:white;padding:25px;border-radius:12px;box-shadow:0 5px 20px #0000000d;margin-bottom:22px}
+h1,h2,h3{color:#3730a3;margin-bottom:14px}
+p{line-height:1.6;margin-bottom:10px}
+.hero{background:linear-gradient(135deg,#4338ca,#7c3aed);color:white;text-align:center;padding:40px 20px;border-radius:12px;margin-bottom:22px}
+.hero h1{color:white;font-size:clamp(25px,4vw,38px)}
+.form-group{margin:15px 0}
+label{display:block;font-weight:bold;margin-bottom:7px}
+input,select{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:6px;font-size:15px;background:white}
+input:focus,select:focus{outline:2px solid #818cf8}
+.btn{display:inline-block;background:#4338ca;color:white;border:0;border-radius:6px;padding:11px 16px;cursor:pointer;font-size:14px;margin:4px 2px}
+.btn:hover{background:#312e81}
+.btn-gray{background:#64748b}.btn-red{background:#b91c1c}
+.button-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}
+.muted{color:#64748b;font-size:14px}
+.notice{display:none;padding:14px;margin-top:14px;border-radius:7px;overflow-wrap:anywhere}
+.success{background:#dcfce7;color:#166534;border:1px solid #86efac}
+.error{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
+.event-grid,.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+.event-card{border:1px solid #e2e8f0;border-radius:8px;padding:18px}
+.event-card h3{margin-bottom:10px}
+.stats .event-card{text-align:center;background:#eef2ff}
+.stats strong{font-size:27px;display:block;color:#4338ca;margin-top:10px}
+.table-wrap{overflow-x:auto;margin-top:16px}
+table{width:100%;border-collapse:collapse;min-width:650px}
+th,td{padding:11px;text-align:left;border-bottom:1px solid #e2e8f0;font-size:14px}
+th{background:#eef2ff;color:#312e81}
+#qrcode{display:flex;justify-content:center;margin:20px}
+#reader{width:100%;max-width:500px;margin:15px auto}
+footer{text-align:center;color:#64748b;padding:24px}
+@media(max-width:760px){
+ .menu-toggle{display:block}
+ .nav-links{display:none;width:100%;flex-direction:column}
+ .nav-links.open{display:flex}
+ .nav-links button{width:100%;text-align:left}
+ .event-grid,.stats{grid-template-columns:1fr}
+ .card{padding:18px}
+ .button-row{flex-direction:column}
+ .button-row .btn{width:100%;margin:0}
+}
+</style>
+</head>
+
+<body>
+<nav class="navbar">
+  <div class="logo">🎓 College Events</div>
+  <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">☰</button>
+  <ul class="nav-links" id="navLinks">
+    <li><button class="active" data-page="home">Home</button></li>
+    <li><button data-page="login">Login</button></li>
+    <li><button data-page="events">Current Events</button></li>
+    <li><button data-page="status">My Status</button></li>
+    <li><button data-page="qr">My QR Code</button></li>
+    <li><button data-page="scanner">QR Scanner</button></li>
+    <li><button data-page="admin">Admin Dashboard</button></li>
+  </ul>
+</nav>
+
+<main>
+<section id="home" class="page active">
+  <div class="hero">
+    <h1>College Event Registration</h1>
+    <p>Register for events, get your QR code, and track attendance.</p>
+    <button class="btn" onclick="showPage('events')">Explore Events</button>
+  </div>
+
+  <div class="card">
+    <h2>Student Profile Registration</h2>
+    <p class="muted">All fields are compulsory.</p>
+    <form id="studentForm">
+      <div class="form-group">
+        <label for="fullName">Full Name *</label>
+        <input id="fullName" required>
+      </div>
+      <div class="form-group">
+        <label for="phone">Phone Number *</label>
+        <input id="phone" type="tel" pattern="[0-9]{10}" maxlength="10" required>
+      </div>
+      <div class="form-group">
+        <label for="email">Email Address *</label>
+        <input id="email" type="email" required>
+      </div>
+      <div class="form-group">
+        <label for="college">College Name *</label>
+        <input id="college" required>
+      </div>
+      <div class="form-group">
+        <label for="semester">Semester *</label>
+        <select id="semester" required>
+          <option value="">Select Semester</option>
+          <option>Semester 1</option><option>Semester 2</option>
+          <option>Semester 3</option><option>Semester 4</option>
+          <option>Semester 5</option><option>Semester 6</option>
+          <option>Semester 7</option><option>Semester 8</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="course">Course *</label>
+        <select id="course" required>
+          <option value="">Select Course</option>
+          <option>B.Tech / B.E. Computer Engineering</option>
+          <option>B.Tech / B.E. Information Technology</option>
+          <option>B.Tech / B.E. Mechanical Engineering</option>
+          <option>B.Tech / B.E. Civil Engineering</option>
+          <option>B.Tech / B.E. Electrical Engineering</option>
+          <option>B.Tech / B.E. Electronics Engineering</option>
+          <option>Diploma Engineering</option><option>BCA</option>
+          <option>MCA</option><option>Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="enrollment">Enrollment Number *</label>
+        <input id="enrollment" required>
+      </div>
+      <div class="button-row">
+        <button class="btn" type="submit">Register Profile</button>
+        <button class="btn btn-gray" type="reset">Clear Form</button>
+      </div>
+    </form>
+    <div id="profileMessage" class="notice success" role="status"></div>
+  </div>
+</section>
+
+<section id="login" class="page">
+  <div class="card">
+    <h2>Login</h2>
+    <p class="muted">Demo form only; real authentication requires a secure backend.</p>
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="loginRole">Login Type *</label>
+        <select id="loginRole" required>
+          <option value="">Select Login Type</option>
+          <option value="student">Student Login</option>
+          <option value="professor">Professor Login</option>
+          <option value="admin">Admin Login</option>
+          <option value="checkin">Check-in Login</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label id="loginIdLabel" for="loginId">ID / Enrollment Number *</label>
+        <input id="loginId" required disabled>
+      </div>
+      <div class="form-group">
+        <label for="loginPassword">Password *</label>
+        <input id="loginPassword" type="password" required disabled>
+      </div>
+      <button class="btn" type="submit">Login</button>
+      <button class="btn btn-gray" type="reset">Reset</button>
+    </form>
+    <div id="loginMessage" class="notice error" role="status"></div>
+  </div>
+</section>
+
+<section id="events" class="page">
+  <div class="card">
+    <h2>Current Events</h2>
+    <p>Register a student profile first, then select events.</p>
+    <div id="eventGrid" class="event-grid"></div>
+    <div id="eventMessage" class="notice success" role="status"></div>
+  </div>
+  <div class="card">
+    <h2>My Registered Events</h2>
+    <div id="myEvents"></div>
+  </div>
+</section>
+
+<section id="status" class="page">
+  <div class="card">
+    <h2>My Registration Status</h2>
+    <div id="statusContent"></div>
+    <button class="btn" onclick="refreshStatus()">Refresh Status</button>
+  </div>
+</section>
+
+<section id="qr" class="page">
+  <div class="card" style="text-align:center">
+    <h2>My Student QR Code</h2>
+    <p>Register your profile to generate your QR code.</p>
+    <div id="qrcode"></div>
+    <div id="qrMessage" class="muted"></div>
+    <button class="btn" onclick="downloadQR()">Download QR Code</button>
+  </div>
+</section>
+
+<section id="scanner" class="page">
+  <div class="card">
+    <h2>Event Check-in Scanner</h2>
+    <p>Choose the event first. Scan the student's QR code to record attendance.</p>
+    <div class="form-group">
+      <label for="scanEvent">Select Event *</label>
+      <select id="scanEvent" required></select>
+    </div>
+    <div id="reader"></div>
+    <div class="button-row">
+      <button class="btn" id="startScan">Start Camera Scanner</button>
+      <button class="btn btn-gray" id="stopScan">Stop Scanner</button>
+    </div>
+    <div id="scanMessage" class="notice success" role="status"></div>
+    <div class="form-group">
+      <label for="manualEnrollment">Manual Check-in by Enrollment Number</label>
+      <input id="manualEnrollment" placeholder="Enter enrollment number">
+      <button class="btn" id="manualCheckin">Record Check-in</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Recent Attendance</h2>
+    <div id="recentAttendance"></div>
+  </div>
+</section>
+
+<section id="admin" class="page">
+  <div class="card">
+    <h2>Admin Dashboard</h2>
+    <p class="muted">Local demo dashboard. This page is not protected by a real admin login.</p>
+    <div class="stats">
+      <div class="event-card">Registered Students<strong id="totalStudents">0</strong></div>
+      <div class="event-card">Event Registrations<strong id="totalRegistrations">0</strong></div>
+      <div class="event-card">Attendance Records<strong id="totalAttendance">0</strong></div>
+    </div>
+    <div class="button-row">
+      <button class="btn" onclick="exportCSV('students')">Export Students CSV</button>
+      <button class="btn" onclick="exportCSV('registrations')">Export Registrations CSV</button>
+      <button class="btn" onclick="exportCSV('attendance')">Export Attendance CSV</button>
+    </div>
+    <div class="form-group">
+      <label for="studentSearch">Search Student by Name or Enrollment Number</label>
+      <input id="studentSearch" placeholder="Type student name or enrollment number">
+    </div>
+    <h3>Registered Students</h3>
+    <div id="studentTable" class="table-wrap"></div>
+    <h3 style="margin-top:25px">Event Registration List</h3>
+    <div id="registrationTable" class="table-wrap"></div>
+    <h3 style="margin-top:25px">Scanned Attendance List</h3>
+    <div id="attendanceTable" class="table-wrap"></div>
+  </div>
+</section>
+</main>
+
+<footer>College Event Registration System | Student Project</footer>
+
+<script>
+"use strict";
+
+const EVENTS = [
+  {name:"Technical Symposium",description:"Technical presentations and engineering projects."},
+  {name:"Hackathon",description:"Build creative software solutions with a team."},
+  {name:"Project Exhibition",description:"Showcase engineering projects and prototypes."},
+  {name:"Cultural Fest",description:"Student performances and campus activities."},
+  {name:"Sports",description:"Cricket, football, volleyball and badminton."},
+  {name:"NCC",description:"Drills, parades, discipline training and community service."}
+];
+
+const $ = id => document.getElementById(id);
+const DB_KEY = "collegeEventSystemV2";
+let scanner = null;
+let scannerRunning = false;
+let lastScannedText = "";
+let lastScannedAt = 0;
+
+function emptyDB(){
+  return {students:[],attendance:[]};
+}
+
+function getDB(){
+  try{
+    const data = JSON.parse(localStorage.getItem(DB_KEY));
+    if(!data || !Array.isArray(data.students) || !Array.isArray(data.attendance)){
+      return emptyDB();
+    }
+    return data;
+  }catch(e){
+    return emptyDB();
+  }
+}
+
+function saveDB(db){
+  try{
+    localStorage.setItem(DB_KEY,JSON.stringify(db));
+    return true;
+  }catch(e){
+    alert("Unable to save data. Browser storage may be full or disabled.");
+    return false;
+  }
+}
+
+function escapeHTML(value){
+  return String(value ?? "").replace(/[&<>"']/g,c=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  })[c]);
+}
+
+function notice(id,text,type="success"){
+  const el=$(id);
+  el.textContent=text;
+  el.className="notice "+type;
+  el.style.display="block";
+}
+
+function hideNotice(id){
+  $(id).style.display="none";
+}
+
+function getStudent(enrollment){
+  const key=String(enrollment ?? "").trim().toLowerCase();
+  return getDB().students.find(s=>s.enrollment.toLowerCase()===key);
+}
+
+function showPage(id){
+  if(id!=="scanner" && scannerRunning) stopScanner();
+
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  if(!$(id)) return;
+  $(id).classList.add("active");
+
+  document.querySelectorAll("[data-page]").forEach(b=>{
+    b.classList.toggle("active",b.dataset.page===id);
+  });
+
+  $("navLinks").classList.remove("open");
+
+  if(id==="events") renderEvents();
+  if(id==="status") refreshStatus();
+  if(id==="qr") generateQR();
+  if(id==="scanner") renderRecentAttendance();
+  if(id==="admin") renderAdmin();
+}
+
+document.querySelectorAll("[data-page]").forEach(b=>{
+  b.addEventListener("click",()=>showPage(b.dataset.page));
+});
+
+$("menuToggle").addEventListener("click",()=>{
+  $("navLinks").classList.toggle("open");
+});
+
+function initEventOptions(){
+  $("eventGrid").innerHTML=EVENTS.map(e=>`
+    <article class="event-card">
+      <h3>${escapeHTML(e.name)}</h3>
+      <p>${escapeHTML(e.description)}</p>
+      <button class="btn" data-register="${escapeHTML(e.name)}">Register for Event</button>
+    </article>
+  `).join("");
+
+  $("scanEvent").innerHTML=
+    '<option value="">Select Event</option>'+
+    EVENTS.map(e=>`<option value="${escapeHTML(e.name)}">${escapeHTML(e.name)}</option>`).join("");
+
+  $("eventGrid").querySelectorAll("[data-register]").forEach(b=>{
+    b.addEventListener("click",()=>registerEvent(b.dataset.register));
+  });
+}
+
+$("studentForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  if(!$("studentForm").reportValidity()) return;
+
+  const enrollment=$("enrollment").value.trim();
+  const db=getDB();
+  const existing=db.students.find(s=>s.enrollment.toLowerCase()===enrollment.toLowerCase());
+
+  const student={
+    fullName:$("fullName").value.trim(),
+    phone:$("phone").value.trim(),
+    email:$("email").value.trim(),
+    college:$("college").value.trim(),
+    semester:$("semester").value,
+    course:$("course").value,
+    enrollment,
+    events:existing ? existing.events : [],
+    status:"Registered",
+    createdAt:existing ? existing.createdAt : new Date().toISOString()
+  };
+
+  if(existing){
+    const confirmed=confirm("This enrollment number already exists. Update this student's profile?");
+    if(!confirmed) return;
+    db.students=db.students.map(s=>s.enrollment.toLowerCase()===enrollment.toLowerCase()?student:s);
+  }else{
+    db.students.push(student);
+  }
+
+  if(!saveDB(db)) return;
+  notice("profileMessage",existing?"Student profile updated successfully.":"Student profile registered successfully.");
+  generateQR();
+  refreshStatus();
+  renderAdmin();
+});
+
+$("studentForm").addEventListener("reset",()=>{
+  setTimeout(()=>hideNotice("profileMessage"),0);
+});
+
+function registerEvent(name){
+  const enrollment=$("enrollment").value.trim();
+  const db=getDB();
+
+  let student=db.students.find(s=>s.enrollment.toLowerCase()===enrollment.toLowerCase());
+
+  // Use the saved profile when the form is not currently filled.
+  if(!student){
+    const typed=prompt("Enter your registered enrollment number:");
+    if(!typed){
+      notice("eventMessage","Please register a student profile first.","error");
+      return;
+    }
+    student=db.students.find(s=>s.enrollment.toLowerCase()===typed.trim().toLowerCase());
+  }
+
+  if(!student){
+    notice("eventMessage","Student not found. Register a profile first.","error");
+    return;
+  }
+
+  if(student.events.includes(name)){
+    notice("eventMessage","Already registered for "+name+". Duplicate registration prevented.","error");
+    return;
+  }
+
+  student.events.push(name);
+  if(!saveDB(db)) return;
+
+  notice("eventMessage","Successfully registered "+student.fullName+" for "+name+".");
+  renderEvents();
+  refreshStatus();
+  renderAdmin();
+}
+
+function renderEvents(){
+  const db=getDB();
+  const enrollment=$("enrollment").value.trim();
+  const student=db.students.find(s=>s.enrollment.toLowerCase()===enrollment.toLowerCase());
+
+  if(!student){
+    $("myEvents").textContent="Enter your registered enrollment number in the profile form to see your events, or register for an event and identify your account.";
+    return;
+  }
+
+  $("myEvents").innerHTML=student.events.length
+    ?student.events.map(name=>`<div class="event-card"><strong>${escapeHTML(name)}</strong><p>Registration: Confirmed</p><p>Attendance: ${db.attendance.some(a=>a.enrollment===student.enrollment && a.event===name)?"Checked in":"Not checked in"}</p></div>`).join("")
+    :"No events registered yet.";
+}
+
+function refreshStatus(){
+  const db=getDB();
+  const enrollment=$("enrollment").value.trim();
+  const student=db.students.find(s=>s.enrollment.toLowerCase()===enrollment.toLowerCase());
+
+  if(!student){
+    $("statusContent").textContent="Enter your enrollment number in the profile form, or register a student profile first.";
+    return;
+  }
+
+  $("statusContent").innerHTML=`
+    <div class="event-card">
+      <p><strong>Name:</strong> ${escapeHTML(student.fullName)}</p>
+      <p><strong>Enrollment:</strong> ${escapeHTML(student.enrollment)}</p>
+      <p><strong>College:</strong> ${escapeHTML(student.college)}</p>
+      <p><strong>Course:</strong> ${escapeHTML(student.course)}</p>
+      <p><strong>Semester:</strong> ${escapeHTML(student.semester)}</p>
+      <p><strong>Status:</strong> ${escapeHTML(student.status)}</p>
+      <p><strong>Registered events:</strong> ${student.events.length ? student.events.map(escapeHTML).join(", "):"None"}</p>
+      <p><strong>Events attended:</strong> ${db.attendance.filter(a=>a.enrollment===student.enrollment).map(a=>escapeHTML(a.event)).join(", ")||"None"}</p>
+    </div>`;
+  renderEvents();
+}
+
+function generateQR(){
+  const student=getStudent($("enrollment").value.trim());
+  const container=$("qrcode");
+  container.replaceChildren();
+
+  if(!student){
+    $("qrMessage").textContent="Register a profile or enter a registered enrollment number first.";
+    return;
+  }
+
+  if(typeof QRCode==="undefined"){
+    $("qrMessage").textContent="QR library unavailable. Check your internet connection.";
+    return;
+  }
+
+  // QR includes an enrollment identifier, not phone, email, or password.
+  const data=JSON.stringify({
+    app:"CollegeEventSystem",
+    enrollment:student.enrollment
+  });
+
+  new QRCode(container,{
+    text:data,width:210,height:210,
+    colorDark:"#312e81",colorLight:"#ffffff",
+    correctLevel:QRCode.CorrectLevel.M
+  });
+
+  $("qrMessage").textContent="QR code for "+student.fullName+" ("+student.enrollment+").";
+}
+
+function downloadQR(){
+  const canvas=$("qrcode").querySelector("canvas");
+  const img=$("qrcode").querySelector("img");
+  const url=canvas?canvas.toDataURL("image/png"):img?.src;
+
+  if(!url){
+    alert("Generate your QR code first.");
+    return;
+  }
+
+  const a=document.createElement("a");
+  a.href=url;
+  a.download="student-qr-code.png";
+  a.click();
+}
+
+$("loginRole").addEventListener("change",()=>{
+  const role=$("loginRole").value;
+  const labels={
+    student:"Enrollment Number *",
+    professor:"Professor ID *",
+    admin:"Admin ID *",
+    checkin:"Check-in Staff ID *"
+  };
+
+  $("loginIdLabel").textContent=labels[role]||"ID / Enrollment Number *";
+  $("loginId").disabled=!role;
+  $("loginPassword").disabled=!role;
+  $("loginId").placeholder=role?"Enter "+labels[role].replace(" *","").toLowerCase():"Select login type first";
+});
+
+$("loginForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  notice("loginMessage",
+    "Demo only: your form was filled in, but no account was authenticated. Add server-side authentication before using real student or staff accounts.",
+    "error");
+});
+
+$("loginForm").addEventListener("reset",()=>{
+  setTimeout(()=>{
+    $("loginId").disabled=true;
+    $("loginPassword").disabled=true;
+    $("loginIdLabel").textContent="ID / Enrollment Number *";
+    hideNotice("loginMessage");
+  },0);
+});
+
+function processCheckin(decodedText){
+  if(!$("scanEvent").value){
+    notice("scanMessage","Select an event before scanning.","error");
+    return;
+  }
+
+  let payload;
+  try{
+    payload=JSON.parse(decodedText);
+  }catch(e){
+    notice("scanMessage","Invalid QR code. Scan a QR code generated by this website.","error");
+    return;
+  }
+
+  if(payload.app!=="CollegeEventSystem" || !payload.enrollment){
+    notice("scanMessage","This QR code is not a recognized student QR code.","error");
+    return;
+  }
+
+  recordAttendance(payload.enrollment,$("scanEvent").value);
+}
+
+function recordAttendance(enrollment,eventName){
+  const db=getDB();
+  const student=db.students.find(s=>s.enrollment.toLowerCase()===String(enrollment).trim().toLowerCase());
+
+  if(!student){
+    notice("scanMessage","Student not found. Register the student profile first.","error");
+    return;
+  }
+
+  if(!student.events.includes(eventName)){
+    notice("scanMessage",student.fullName+" is not registered for "+eventName+". Check-in denied.","error");
+    return;
+  }
+
+  const duplicate=db.attendance.some(a=>
+    a.enrollment.toLowerCase()===student.enrollment.toLowerCase() &&
+    a.event===eventName
+  );
+
+  if(duplicate){
+    notice("scanMessage","Already checked in: "+student.fullName+" for "+eventName+". Duplicate scan prevented.","error");
+    renderRecentAttendance();
+    return;
+  }
+
+  db.attendance.push({
+    enrollment:student.enrollment,
+    fullName:student.fullName,
+    event:eventName,
+    checkedInAt:new Date().toISOString()
+  });
+
+  if(!saveDB(db)) return;
+
+  notice("scanMessage","Check-in successful! "+student.fullName+" | "+student.enrollment+" | "+eventName);
+  renderRecentAttendance();
+  renderAdmin();
+  refreshStatus();
+}
+
+$("manualCheckin").addEventListener("click",()=>{
+  const enrollment=$("manualEnrollment").value.trim();
+  const eventName=$("scanEvent").value;
+
+  if(!enrollment || !eventName){
+    notice("scanMessage","Enter an enrollment number and select an event.","error");
+    return;
+  }
+
+  recordAttendance(enrollment,eventName);
+});
+
+async function startScanner(){
+  if(scannerRunning) return;
+
+  if(typeof Html5Qrcode==="undefined"){
+    notice("scanMessage","QR scanner library did not load. Check your internet connection.","error");
+    return;
+  }
+
+  if(!$("scanEvent").value){
+    notice("scanMessage","Select an event before starting the scanner.","error");
+    return;
+  }
+
+  try{
+    scanner=new Html5Qrcode("reader");
+    await scanner.start(
+      {facingMode:"environment"},
+      {fps:10,qrbox:{width:240,height:240}},
+      decodedText=>{
+        const now=Date.now();
+        if(decodedText===lastScannedText && now-lastScannedAt<2500) return;
+        lastScannedText=decodedText;
+        lastScannedAt=now;
+        processCheckin(decodedText);
+      },
+      ()=>{}
+    );
+    scannerRunning=true;
+    notice("scanMessage","Camera started. Point it at a student's QR code.");
+  }catch(error){
+    scanner=null;
+    scannerRunning=false;
+    notice("scanMessage","Could not start camera. Allow camera permission and use HTTPS or localhost. You can also use manual check-in.","error");
+  }
+}
+
+async function stopScanner(){
+  if(scanner && scannerRunning){
+    try{await scanner.stop();}catch(e){}
+    try{scanner.clear();}catch(e){}
+  }
+  scanner=null;
+  scannerRunning=false;
+}
+
+$("startScan").addEventListener("click",startScanner);
+$("stopScan").addEventListener("click",stopScanner);
+
+function renderRecentAttendance(){
+  const records=getDB().attendance.slice().reverse().slice(0,10);
+
+  $("recentAttendance").innerHTML=records.length
+    ?tableHTML(["Student","Enrollment","Event","Check-in Time"],
+      records.map(a=>[
+        a.fullName,a.enrollment,a.event,new Date(a.checkedInAt).toLocaleString()
+      ]))
+    :"No attendance recorded yet.";
+}
+
+function tableHTML(headers,rows){
+  if(!rows.length) return "<p>No records found.</p>";
+
+  return "<div class='table-wrap'><table><thead><tr>"+
+    headers.map(h=>"<th>"+escapeHTML(h)+"</th>").join("")+
+    "</tr></thead><tbody>"+
+    rows.map(row=>"<tr>"+row.map(v=>"<td>"+escapeHTML(v)+"</td>").join("")+"</tr>").join("")+
+    "</tbody></table></div>";
+}
+
+function renderAdmin(){
+  const db=getDB();
+  const registrations=db.students.reduce((sum,s)=>sum+s.events.length,0);
+
+  $("totalStudents").textContent=db.students.length;
+  $("totalRegistrations").textContent=registrations;
+  $("totalAttendance").textContent=db.attendance.length;
+
+  const query=$("studentSearch").value.trim().toLowerCase();
+  const students=db.students.filter(s=>
+    s.fullName.toLowerCase().includes(query) ||
+    s.enrollment.toLowerCase().includes(query)
+  );
+
+  $("studentTable").innerHTML=tableHTML(
+    ["Name","Enrollment","College","Course","Semester","Phone"],
+    students.map(s=>[s.fullName,s.enrollment,s.college,s.course,s.semester,s.phone])
+  );
+
+  const regRows=[];
+  db.students.forEach(s=>s.events.forEach(event=>{
+    regRows.push([s.fullName,s.enrollment,event,
+      db.attendance.some(a=>a.enrollment===s.enrollment && a.event===event)?"Checked in":"Not checked in"]);
+  }));
+
+  $("registrationTable").innerHTML=tableHTML(
+    ["Student","Enrollment","Event","Attendance"],regRows
+  );
+
+  $("attendanceTable").innerHTML=tableHTML(
+    ["Student","Enrollment","Event","Date and Time"],
+    db.attendance.slice().reverse().map(a=>[
+      a.fullName,a.enrollment,a.event,new Date(a.checkedInAt).toLocaleString()
+    ])
+  );
+}
+
+$("studentSearch").addEventListener("input",renderAdmin);
+
+function exportCSV(type){
+  const db=getDB();
+  let headers,rows;
+
+  if(type==="students"){
+    headers=["Full Name","Enrollment","Phone","Email","College","Semester","Course","Events"];
+    rows=db.students.map(s=>[s.fullName,s.enrollment,s.phone,s.email,s.college,s.semester,s.course,s.events.join("; ")]);
+  }else if(type==="registrations"){
+    headers=["Full Name","Enrollment","Event","Attendance"];
+    rows=[];
+    db.students.forEach(s=>s.events.forEach(event=>{
+      rows.push([s.fullName,s.enrollment,event,
+        db.attendance.some(a=>a.enrollment===s.enrollment && a.event===event)?"Checked in":"Not checked in"]);
+    }));
+  }else{
+    headers=["Full Name","Enrollment","Event","Check-in Time"];
+    rows=db.attendance.map(a=>[a.fullName,a.enrollment,a.event,new Date(a.checkedInAt).toLocaleString()]);
+  }
+
+  const csvCell=value=>'"'+String(value??"").replace(/"/g,'""')+'"';
+  const csv=[headers,...rows].map(row=>row.map(csvCell).join(",")).join("\r\n");
+  const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=type+"-report.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+initEventOptions();
+renderEvents();
+refreshStatus();
+renderRecentAttendance();
+renderAdmin();
+</script>
+</body>
+</html>
